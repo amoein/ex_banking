@@ -31,10 +31,10 @@ defmodule ExBanking.Utils do
       {:ok, new_amount} ->
         case Decimal.positive?(new_amount) do
           false ->
-            {:error , :wrong_arguments}
+            {:error, :wrong_arguments}
 
           true ->
-            {:ok, Decimal.round(new_amount,2)}
+            {:ok, Decimal.round(new_amount, 2)}
         end
     end
   end
@@ -42,6 +42,6 @@ defmodule ExBanking.Utils do
   @spec is_process_overload?(pid :: pid) :: true | false
   def is_process_overload?(pid) do
     {:message_queue_len, item_count} = Process.info(pid, :message_queue_len)
-     @max_process_load_in_queue <= item_count
+    @max_process_load_in_queue <= item_count
   end
 end

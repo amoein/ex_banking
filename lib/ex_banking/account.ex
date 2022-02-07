@@ -1,11 +1,19 @@
 defmodule ExBanking.Account do
   use GenServer
 
+  @spec deposit(use_pid :: pid, amount :: Decimal.t(), currency :: String.t()) ::
+          {:ok, new_balance :: float()} | :error
   def deposit(user_pid, amount, currency) do
     GenServer.call(user_pid, {:deposit, amount, currency})
   end
 
-  @spec start(user :: atom) :: {:ok, pid} | :error
+  @spec withdraw(use_pid :: pid, amount :: Decimal.t(), currency :: String.t()) ::
+          {:ok, new_balance :: float()} | :error | {:error, :not_enough_money}
+  def withdraw(user_pid, amount, currency) do
+    GenServer.call(user_pid, {:withdraw, amount, currency})
+  end
+
+  @spec start(username :: atom) :: {:ok, pid} | :error
   def start(username) do
     GenServer.start(__MODULE__, [], name: username)
   end
@@ -22,8 +30,22 @@ defmodule ExBanking.Account do
 
       balance ->
         new_balance = Decimal.add(balance, amount)
-        IO.inspect(new_balance)
         {:reply, {:ok, Decimal.to_float(new_balance)}, %{state | currency => new_balance}}
+    end
+  end
+
+  def handle_call({:withdraw, amount, currency}, _, state) do
+    case Map.get(state, currency) do
+      nil ->
+        {:reply, {:error, :not_enough_money}, state}
+
+      balance ->
+        if amount > balance do
+          {:reply, {:error, :not_enough_money}, state}
+        else
+          new_balance = Decimal.sub(balance, amount)
+          {:reply, {:ok, Decimal.to_float(new_balance)}, %{state | currency => new_balance}}
+        end
     end
   end
 

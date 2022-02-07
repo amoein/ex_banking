@@ -58,9 +58,31 @@ defmodule ExBanking do
              | :user_does_not_exist
              | :not_enough_money
              | :too_many_requests_to_user}
-  def withdraw(user, amount, currency) do
-    :ok
+  def withdraw(user, amount, currency) when is_number(amount) do
+    case Utils.get_decimal(amount) do
+      {:ok, valid_amount} ->
+        case Utils.get_user_pid(user) do
+          {:error, :user_does_not_exist} ->
+            {:error, :user_does_not_exist}
+
+          {:ok, pid} ->
+            if Utils.is_process_overload?(pid) do
+              {:error, :too_many_requests_to_user}
+            else
+              case Account.withdraw(pid, valid_amount, currency) do
+                {:ok, new_balance} -> {:ok, new_balance}
+                {:error, :not_enough_money} -> {:error, :not_enough_money}
+                _ -> {:error, :wrong_arguments}
+              end
+            end
+        end
+
+      _ ->
+        {:error, :wrong_arguments}
+    end
   end
+
+  def withdraw(_, _, _), do: {:error, :wrong_arguments}
 
   @spec get_balance(user :: String.t(), currency :: String.t()) ::
           {:ok, balance :: number()}
