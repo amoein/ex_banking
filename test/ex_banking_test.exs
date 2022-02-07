@@ -33,4 +33,14 @@ defmodule ExBankingTest do
 
     assert ExBanking.withdraw("m2", 800.01, "e") == {:error, :not_enough_money}
   end
+
+  test "create user and deposit and get_balance" do
+    assert ExBanking.create_user("m3") == :ok
+
+    assert ExBanking.get_balance("m3", "d") === {:ok, 0.00}
+
+    assert ExBanking.deposit("m3", 1100.54, "d") === {:ok, 1100.54}
+
+    assert ExBanking.get_balance("m3", "d") === {:ok, 1100.54}
+  end
 end

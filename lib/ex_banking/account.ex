@@ -13,6 +13,12 @@ defmodule ExBanking.Account do
     GenServer.call(user_pid, {:withdraw, amount, currency})
   end
 
+  @spec get_balance(use_pid :: pid, currency :: String.t()) ::
+          {:ok, new_balance :: float()} | :error
+  def get_balance(user_pid, currency) do
+    GenServer.call(user_pid, {:get_balance, currency})
+  end
+
   @spec start(username :: atom) :: {:ok, pid} | :error
   def start(username) do
     GenServer.start(__MODULE__, [], name: username)
@@ -47,6 +53,20 @@ defmodule ExBanking.Account do
           {:reply, {:ok, Decimal.to_float(new_balance)}, %{state | currency => new_balance}}
         end
     end
+  end
+
+  def handle_call({:get_balance, currency}, _, state) do
+    balance =
+      case Map.get(state, currency) do
+        nil ->
+          {:ok, balance} = Decimal.cast(0.00)
+          balance
+
+        balance ->
+          balance
+      end
+
+    {:reply, {:ok, Decimal.to_float(balance)}, state}
   end
 
   def handle_call(_msg, _from, state) do

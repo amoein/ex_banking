@@ -88,7 +88,20 @@ defmodule ExBanking do
           {:ok, balance :: number()}
           | {:error, :wrong_arguments | :user_does_not_exist | :too_many_requests_to_user}
   def get_balance(user, currency) do
-    :ok
+    case Utils.get_user_pid(user) do
+      {:error, :user_does_not_exist} ->
+        {:error, :user_does_not_exist}
+
+      {:ok, pid} ->
+        if Utils.is_process_overload?(pid) do
+          {:error, :too_many_requests_to_user}
+        else
+          case Account.get_balance(pid, currency) do
+            {:ok, balance} -> {:ok, balance}
+            _ -> {:error, :wrong_arguments}
+          end
+        end
+    end
   end
 
   @spec send(
