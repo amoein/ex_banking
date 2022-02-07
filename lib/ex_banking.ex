@@ -119,7 +119,43 @@ defmodule ExBanking do
              | :too_many_requests_to_sender
              | :too_many_requests_to_receiver}
 
-  def send(from_user, to_user, amount, currency) do
-    :ok
+  def send(from_user, to_user, amount, currency) when is_number(amount) do
+    case Utils.get_decimal(amount) do
+      {:ok, valid_amount} ->
+        case Utils.get_user_pid(from_user) do
+          {:error, :user_does_not_exist} ->
+            {:error, :sender_does_not_exist}
+
+          {:ok, pid_sender} ->
+            case Utils.get_user_pid(to_user) do
+              {:error, :user_does_not_exist} ->
+                {:error, :receiver_does_not_exist}
+
+              {:ok, pid_receiver} ->
+                if Utils.is_process_overload?(pid_sender) do
+                  {:error, :too_many_requests_to_sender}
+                else
+                  case Account.send(pid_sender, pid_receiver, valid_amount, currency) do
+                    {:ok, sender_new_balance, receiver_new_balance} ->
+                      {:ok, sender_new_balance, receiver_new_balance}
+
+                    {:error, :not_enough_money} ->
+                      {:error, :not_enough_money}
+
+                    {:error, :too_many_requests_to_receiver} ->
+                      {:error, :too_many_requests_to_receiver}
+
+                    _ ->
+                      {:error, :wrong_arguments}
+                  end
+                end
+            end
+        end
+
+      _ ->
+        {:error, :wrong_arguments}
+    end
   end
+
+  def send(_, _, _, _), do: {:error, :wrong_arguments}
 end

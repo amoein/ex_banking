@@ -1,5 +1,6 @@
 defmodule ExBanking.Account do
   use GenServer
+  alias ExBanking.Utils
 
   @spec deposit(use_pid :: pid, amount :: Decimal.t(), currency :: String.t()) ::
           {:ok, new_balance :: float()} | :error
@@ -17,6 +18,20 @@ defmodule ExBanking.Account do
           {:ok, new_balance :: float()} | :error
   def get_balance(user_pid, currency) do
     GenServer.call(user_pid, {:get_balance, currency})
+  end
+
+  @spec send(
+          pid_sender :: pid,
+          pid_receiver :: pid,
+          amount :: Decimal.t(),
+          currency :: String.t()
+        ) ::
+          {:ok, new_balance :: float()}
+          | :error
+          | {:error, :not_enough_money}
+          | {:error, :too_many_requests_to_receiver}
+  def send(pid_sender, pid_receiver, amount, currency) do
+    GenServer.call(pid_sender, {:send, pid_receiver, amount, currency})
   end
 
   @spec start(username :: atom) :: {:ok, pid} | :error
@@ -67,6 +82,33 @@ defmodule ExBanking.Account do
       end
 
     {:reply, {:ok, Decimal.to_float(balance)}, state}
+  end
+
+  def handle_call({:send, pid_receiver, amount, currency}, _, state) do
+    case Map.get(state, currency) do
+      nil ->
+        {:reply, {:error, :not_enough_money}, state}
+
+      balance ->
+        if amount > balance do
+          {:reply, {:error, :not_enough_money}, state}
+        else
+          if Utils.is_process_overload?(pid_receiver) do
+            {:reply, {:error, :too_many_requests_to_receiver}, state}
+          else
+            case deposit(pid_receiver, amount, currency) do
+              {:ok, receiver_new_balance} ->
+                new_balance = Decimal.sub(balance, amount)
+
+                {:reply, {:ok, Decimal.to_float(new_balance), receiver_new_balance},
+                 %{state | currency => new_balance}}
+
+              _ ->
+                {:reply, :error, state}
+            end
+          end
+        end
+    end
   end
 
   def handle_call(_msg, _from, state) do

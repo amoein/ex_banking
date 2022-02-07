@@ -9,7 +9,7 @@ defmodule ExBankingTest do
   test "create user and deposit" do
     assert ExBanking.create_user("m1") == :ok
 
-    assert ExBanking.deposit("m2", 10, "d") === {:error, :user_does_not_exist}
+    assert ExBanking.deposit("m000", 10, "d") === {:error, :user_does_not_exist}
 
     assert ExBanking.deposit("m1", 10, "d") === {:ok, 10.00}
 
@@ -43,4 +43,23 @@ defmodule ExBankingTest do
 
     assert ExBanking.get_balance("m3", "d") === {:ok, 1100.54}
   end
+
+  test "send" do
+    assert ExBanking.create_user("s1") == :ok
+
+    assert ExBanking.deposit("s1", 1000.00, "d") === {:ok, 1000.00}
+
+    assert ExBanking.get_balance("s1", "d") === {:ok, 1000.00}
+
+    assert ExBanking.create_user("s2") == :ok
+
+    assert ExBanking.deposit("s2", 2000.00, "d") === {:ok, 2000.00}
+
+    assert ExBanking.get_balance("s2", "d") === {:ok, 2000.00}
+
+    assert ExBanking.send("s2", "s1", 500.00, "d") === {:ok, 1500.00, 1500.00}
+
+    assert ExBanking.send("s2", "s1", 500.00, "e") === {:ok, 1500.00, 1500.00}
+  end
+
 end
