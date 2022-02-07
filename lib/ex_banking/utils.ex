@@ -1,5 +1,5 @@
 defmodule ExBanking.Utils do
-  @max_process_load_in_queue 9
+
 
   @spec get_username(user :: String.t()) :: {:ok, atom()} | {:error, :wrong_arguments}
   def get_username(user) do
@@ -37,11 +37,5 @@ defmodule ExBanking.Utils do
             {:ok, Decimal.round(new_amount, 2)}
         end
     end
-  end
-
-  @spec is_process_overload?(pid :: pid) :: true | false
-  def is_process_overload?(pid) do
-    {:message_queue_len, item_count} = Process.info(pid, :message_queue_len)
-    @max_process_load_in_queue <= item_count
   end
 end

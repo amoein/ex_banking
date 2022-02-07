@@ -1,6 +1,6 @@
 defmodule ExBanking.Account do
   use GenServer
-  alias ExBanking.Utils
+  @max_process_load_in_queue 9
 
   @spec deposit(use_pid :: pid, amount :: Decimal.t(), currency :: String.t()) ::
           {:ok, new_balance :: float()} | :error
@@ -32,6 +32,12 @@ defmodule ExBanking.Account do
           | {:error, :too_many_requests_to_receiver}
   def send(pid_sender, pid_receiver, amount, currency) do
     GenServer.call(pid_sender, {:send, pid_receiver, amount, currency})
+  end
+
+  @spec is_process_overload?(pid :: pid) :: true | false
+  def is_process_overload?(pid) do
+    {:ok, item_count} = GenServer.call(pid, :queue_len)
+    @max_process_load_in_queue <= item_count
   end
 
   @spec start(username :: atom) :: {:ok, pid} | :error
@@ -93,7 +99,7 @@ defmodule ExBanking.Account do
         if amount > balance do
           {:reply, {:error, :not_enough_money}, state}
         else
-          if Utils.is_process_overload?(pid_receiver) do
+          if is_process_overload?(pid_receiver) do
             {:reply, {:error, :too_many_requests_to_receiver}, state}
           else
             case deposit(pid_receiver, amount, currency) do
@@ -109,6 +115,11 @@ defmodule ExBanking.Account do
           end
         end
     end
+  end
+
+  def handle_call(:queue_len, _, state) do
+    {:message_queue_len, item_count} = Process.info(self(), :message_queue_len)
+    {:reply, {:ok, item_count}, state}
   end
 
   def handle_call(_msg, _from, state) do

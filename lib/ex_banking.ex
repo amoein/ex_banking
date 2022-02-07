@@ -34,7 +34,7 @@ defmodule ExBanking do
             {:error, :user_does_not_exist}
 
           {:ok, pid} ->
-            if Utils.is_process_overload?(pid) do
+            if   Account.is_process_overload?(pid) do
               {:error, :too_many_requests_to_user}
             else
               case Account.deposit(pid, valid_amount, currency) do
@@ -66,7 +66,7 @@ defmodule ExBanking do
             {:error, :user_does_not_exist}
 
           {:ok, pid} ->
-            if Utils.is_process_overload?(pid) do
+            if   Account.is_process_overload?(pid) do
               {:error, :too_many_requests_to_user}
             else
               case Account.withdraw(pid, valid_amount, currency) do
@@ -93,7 +93,7 @@ defmodule ExBanking do
         {:error, :user_does_not_exist}
 
       {:ok, pid} ->
-        if Utils.is_process_overload?(pid) do
+        if   Account.is_process_overload?(pid) do
           {:error, :too_many_requests_to_user}
         else
           case Account.get_balance(pid, currency) do
@@ -132,7 +132,7 @@ defmodule ExBanking do
                 {:error, :receiver_does_not_exist}
 
               {:ok, pid_receiver} ->
-                if Utils.is_process_overload?(pid_sender) do
+                if   Account.is_process_overload?(pid_sender) do
                   {:error, :too_many_requests_to_sender}
                 else
                   case Account.send(pid_sender, pid_receiver, valid_amount, currency) do

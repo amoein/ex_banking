@@ -59,7 +59,7 @@ defmodule ExBankingTest do
 
     assert ExBanking.send("s2", "s1", 500.00, "d") === {:ok, 1500.00, 1500.00}
 
-    assert ExBanking.send("s2", "s1", 500.00, "e") === {:ok, 1500.00, 1500.00}
+    assert ExBanking.send("s2", "s1", 500.00, "e") === {:error, :not_enough_money}
   end
 
 end
